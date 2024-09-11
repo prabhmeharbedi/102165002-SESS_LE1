@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Command Recorder</title>
+</head>
+<body>
+  <h1>Record Your Voice Commands</h1>
+
+  <!-- Buttons to control recording -->
+  <button id="startRecordButton">Start Recording</button>
+  <button id="stopRecordButton" disabled>Stop Recording</button>
+
+  <h2>Recordings</h2>
+  <ul id="recordingsList"></ul>
+
+  <!-- Include the Recorder.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recorderjs/0.1.0/recorder.js"></script>
+
+  <script>
+    let recorder, audioStream;
+
+    // Start recording
+    document.getElementById('startRecordButton').addEventListener('click', async () => {
+      audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioContext = new AudioContext();
+      const input = audioContext.createMediaStreamSource(audioStream);
+      recorder = new Recorder(input, { numChannels: 1 });
+
+      recorder.record();
+      document.getElementById('startRecordButton').disabled = true;
+      document.getElementById('stopRecordButton').disabled = false;
+    });
+
+    // Stop recording
+    document.getElementById('stopRecordButton').addEventListener('click', () => {
+      recorder.stop();
+      audioStream.getAudioTracks()[0].stop(); // Stop the microphone input
+
+      recorder.exportWAV(blob => {
+        const url = URL.createObjectURL(blob);
+        const audioElement = document.createElement('audio');
+        audioElement.controls = true;
+        audioElement.src = url;
+
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = 'command.wav';
+        downloadLink.innerHTML = 'Download Recording';
+
+        const li = document.createElement('li');
+        li.appendChild(audioElement);
+        li.appendChild(downloadLink);
+        document.getElementById('recordingsList').appendChild(li);
+      });
+
+      document.getElementById('startRecordButton').disabled = false;
+      document.getElementById('stopRecordButton').disabled = true;
+    });
+  </script>
+</body>
+</html>
